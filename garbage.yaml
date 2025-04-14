@@ -1,0 +1,18 @@
+# 垃圾分类数据集配置
+path: c:/Users/DELL/Desktop/yolov5_garbage_detect/yolov5_garbage_detect-backend/data/laji  # 数据集根目录
+train: images/train  # 训练集图片
+val: images/val  # 验证集图片
+test: images/test  # 测试集图片（可选）
+
+# 类别数量
+nc: 4  # 类别数量(可回收物、有害垃圾、厨余垃圾、其他垃圾)
+
+# 类别
+names:
+  0: 可回收物
+  1: 有害垃圾
+  2: 厨余垃圾
+  3: 其他垃圾
+
+# 下载数据集（可选）
+# download: https://github.com/ultralytics/yolov5/releases/download/v1.0/ 

@@ -1,0 +1,121 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 自定义全局样式 */
+:root {
+  --primary-color: #28a745;
+  --secondary-color: #6c757d;
+  --harmful-color: #dc3545;
+  --kitchen-color: #fd7e14;
+  --other-color: #6c757d;
+}
+
+.bg-primary-custom {
+  background-color: var(--primary-color);
+}
+
+.text-primary-custom {
+  color: var(--primary-color);
+}
+
+/* 分类标签样式 */
+.badge-recyclable {
+  background-color: var(--primary-color);
+}
+
+.badge-harmful {
+  background-color: var(--harmful-color);
+}
+
+.badge-kitchen {
+  background-color: var(--kitchen-color);
+}
+
+.badge-other {
+  background-color: var(--other-color);
+}
+
+/* 页面容器样式 */
+.page-container {
+  min-height: calc(100vh - 56px - 100px);
+  padding: 2rem 0;
+}
+
+/* 上传区域样式 */
+.upload-area {
+  border: 2px dashed #ddd;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  background-color: #f8f9fa;
+  transition: all 0.3s;
+}
+
+.upload-area.highlight {
+  border-color: #28a745;
+  background-color: #e9ecef;
+}
+
+.upload-icon {
+  font-size: 60px;
+  color: #6c757d;
+  margin-bottom: 20px;
+}
+
+/* 结果展示区域样式 */
+.result-section {
+  margin-top: 2rem;
+}
+
+.image-preview {
+  max-height: 400px;
+  width: 100%;
+  object-fit: contain;
+}
+
+/* 加载动画 */
+.loading-spinner {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+/* 卡片悬停效果 */
+.card-hover {
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 表格样式 */
+.table-results th,
+.table-results td {
+  vertical-align: middle;
+}
+
+/* 缩略图样式 */
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.thumbnail:hover {
+  transform: scale(1.05);
+} 

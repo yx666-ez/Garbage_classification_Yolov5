@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>垃圾识别 - 垃圾分类识别系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .page-header {
+            background-color: #f8f9fa;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
+        }
+        .upload-area:hover {
+            border-color: #28a745;
+            background-color: #f1f9f1;
+        }
+        .upload-icon {
+            font-size: 60px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        .preview-container {
+            position: relative;
+            margin-top: 20px;
+        }
+        .preview-image {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .loader {
+            display: none;
+            margin: 20px auto;
+        }
+        .result-container {
+            margin-top: 30px;
+            display: none;
+        }
+        .footer {
+            background-color: #212529;
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        .category-label {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .recyclable { background-color: #28a745; }
+        .harmful { background-color: #dc3545; }
+        .kitchen { background-color: #fd7e14; }
+        .other { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">垃圾分类识别系统</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/detect">开始识别</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">关于项目</a>
+                    </li>
+                    <li class="nav-item" id="login-item">
+                        <a class="nav-link" href="/login">登录/注册</a>
+                    </li>
+                    <li class="nav-item dropdown d-none" id="user-dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="username" role="button" data-bs-toggle="dropdown">
+                            用户名
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile">个人信息</a></li>
+                            <li><a class="dropdown-item" href="/history">历史记录</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logout-btn">退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="container">
+            <h1>垃圾识别</h1>
+            <p class="lead">上传一张包含垃圾的图片，AI将自动检测并识别垃圾类别</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    支持JPG、JPEG、PNG格式的图片，最大5MB。图片质量越清晰，识别效果越好。<strong>系统使用低置信度阈值(0.1)，可更好地识别垃圾物品。</strong>
+                </div>
+                
+                <div id="login-warning" class="alert alert-warning d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    请先 <a href="/login" class="alert-link">登录</a> 以保存识别历史记录。
+                </div>
+                
+                <div id="error-alert" class="alert alert-danger d-none">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    <span id="error-message"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">上传图片</h5>
+                        
+                        <div class="upload-area" id="upload-area">
+                            <i class="bi bi-cloud-arrow-up upload-icon"></i>
+                            <h5>点击或拖拽图片到此处</h5>
+                            <p class="text-muted">支持JPG、JPEG、PNG格式</p>
+                            <input type="file" id="file-input" class="d-none" accept=".jpg,.jpeg,.png">
+                        </div>
+                        
+                        <div class="preview-container d-none" id="preview-container">
+                            <img id="preview-image" class="preview-image" src="" alt="预览图">
+                            <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" id="remove-btn">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-3">
+                            <button class="btn btn-primary" id="detect-btn" disabled>
+                                <i class="bi bi-search me-1"></i> 开始识别
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="loader text-center" id="loader">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2">正在分析图片，请稍候...</p>
+                </div>
+                
+                <div class="result-container" id="result-container">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">识别结果</h5>
+                            <div id="result-image-container" class="mb-3">
+                                <img id="result-image" class="img-fluid rounded" src="" alt="结果图">
+                            </div>
+                            
+                            <div id="detection-results">
+                                <div class="alert alert-success">
+                                    <h6><i class="bi bi-check-circle-fill me-2"></i> 检测到 <span id="count-label">0</span> 个物体</h6>
+                                </div>
+                                
+                                <div class="list-group" id="results-list">
+                                    <!-- 结果将动态添加到这里 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>垃圾分类识别系统</h5>
+                    <p>基于YOLOv5的垃圾智能识别系统，帮助您正确分类垃圾，保护环境，共建绿色家园。</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>链接</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="text-white">首页</a></li>
+                        <li><a href="/detect" class="text-white">开始识别</a></li>
+                        <li><a href="/about" class="text-white">关于项目</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>联系我们</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-envelope me-2"></i> contact@example.com</li>
+                        <li><i class="bi bi-telephone me-2"></i> (123) 456-7890</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p>&copy; <span id="current-year"></span> 垃圾分类识别系统. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // DOM元素
+        const fileInput = document.getElementById('file-input');
+        const uploadArea = document.getElementById('upload-area');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const removeBtn = document.getElementById('remove-btn');
+        const detectBtn = document.getElementById('detect-btn');
+        const loader = document.getElementById('loader');
+        const resultContainer = document.getElementById('result-container');
+        const resultImage = document.getElementById('result-image');
+        const countLabel = document.getElementById('count-label');
+        const resultsList = document.getElementById('results-list');
+        const errorAlert = document.getElementById('error-alert');
+        const errorMessage = document.getElementById('error-message');
+        const loginWarning = document.getElementById('login-warning');
+        const loginItem = document.getElementById('login-item');
+        const userDropdown = document.getElementById('user-dropdown');
+        const usernameEl = document.getElementById('username');
+        const logoutBtn = document.getElementById('logout-btn');
+        const currentYear = document.getElementById('current-year');
+        
+        // 设置当前年份
+        currentYear.textContent = new Date().getFullYear();
+        
+        // 检查登录状态
+        fetch('/api/user')
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('未登录');
+            })
+            .then(data => {
+                if (data.status === 'success' && data.user) {
+                    // 用户已登录
+                    loginItem.classList.add('d-none');
+                    userDropdown.classList.remove('d-none');
+                    usernameEl.textContent = data.user.username;
+                    loginWarning.classList.add('d-none');
+                    
+                    // 如果是管理员，显示管理入口
+                    if (data.user.is_admin) {
+                        const adminItem = document.createElement('li');
+                        adminItem.innerHTML = '<a class="dropdown-item" href="/admin">管理后台</a>';
+                        userDropdown.querySelector('.dropdown-menu').insertBefore(
+                            adminItem, 
+                            userDropdown.querySelector('.dropdown-divider')
+                        );
+                    }
+                } else {
+                    // 用户未登录
+                    loginItem.classList.remove('d-none');
+                    userDropdown.classList.add('d-none');
+                    loginWarning.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                // 用户未登录
+                loginItem.classList.remove('d-none');
+                userDropdown.classList.add('d-none');
+                loginWarning.classList.remove('d-none');
+            });
+        
+        // 上传区域点击事件
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 拖拽处理
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-primary');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-primary');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-primary');
+            
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        
+        // 文件选择
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+        
+        // 删除预览图
+        removeBtn.addEventListener('click', () => {
+            resetUpload();
+        });
+        
+        // 检测按钮点击
+        detectBtn.addEventListener('click', () => {
+            if (fileInput.files.length) {
+                detectGarbage(fileInput.files[0]);
+            }
+        });
+        
+        // 退出登录
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                logout();
+            });
+        }
+        
+        // 处理选择的文件
+        function handleFile(file) {
+            // 检查文件类型
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                showError('只支持JPG、JPEG、PNG格式的图片');
+                return;
+            }
+            
+            // 检查文件大小
+            if (file.size > 5 * 1024 * 1024) {
+                showError('图片大小不能超过5MB');
+                return;
+            }
+            
+            // 显示预览
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                previewContainer.classList.remove('d-none');
+                uploadArea.classList.add('d-none');
+                detectBtn.disabled = false;
+                hideError();
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // 重置上传区域
+        function resetUpload() {
+            fileInput.value = '';
+            previewImage.src = '';
+            previewContainer.classList.add('d-none');
+            uploadArea.classList.remove('d-none');
+            detectBtn.disabled = true;
+            resultContainer.style.display = 'none';
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorAlert.classList.remove('d-none');
+        }
+        
+        // 隐藏错误信息
+        function hideError() {
+            errorAlert.classList.add('d-none');
+        }
+        
+        // 执行垃圾识别
+        function detectGarbage(file) {
+            // 显示加载中
+            loader.style.display = 'block';
+            resultContainer.style.display = 'none';
+            hideError();
+            
+            // 创建表单数据
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // 发送识别请求
+            fetch('/api/detect', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                loader.style.display = 'none';
+                
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || data.error || '识别失败，请重试');
+                    });
+                }
+                
+                return response.json();
+            })
+            .then(data => {
+                // 显示结果
+                if (data.status === 'success') {
+                    displayResults(data);
+                } else {
+                    showError(data.message || '识别失败，请重试');
+                }
+            })
+            .catch(error => {
+                loader.style.display = 'none';
+                showError(error.message || '识别请求失败，请稍后重试');
+                console.error('识别错误:', error);
+            });
+        }
+        
+        // 显示识别结果
+        function displayResults(data) {
+            resultContainer.style.display = 'block';
+            
+            // 设置结果图片
+            if (data.result_url) {
+                resultImage.src = data.result_url;
+            } else {
+                // 如果没有结果图，使用原图
+                resultImage.src = previewImage.src;
+            }
+            
+            // 更新检测到的物体数量
+            const results = data.results || [];
+            countLabel.textContent = results.length;
+            
+            // 清空结果列表
+            resultsList.innerHTML = '';
+            
+            // 添加结果项
+            if (results.length === 0) {
+                resultsList.innerHTML = '<div class="alert alert-warning">未检测到任何垃圾物体</div>';
+            } else {
+                results.forEach((result, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item';
+                    
+                    // 确定类别标签样式
+                    let categoryClass = 'other';
+                    const className = result.class_name.toLowerCase();
+                    if (className.includes('可回收')) categoryClass = 'recyclable';
+                    else if (className.includes('有害')) categoryClass = 'harmful';
+                    else if (className.includes('厨余')) categoryClass = 'kitchen';
+                    
+                    const confidence = (result.confidence * 100).toFixed(2);
+                    
+                    item.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="category-label ${categoryClass}">${result.class_name}</span>
+                                <span>物体 #${index + 1}</span>
+                            </div>
+                            <span class="badge bg-primary">${confidence}% 置信度</span>
+                        </div>
+                    `;
+                    
+                    resultsList.appendChild(item);
+                });
+            }
+        }
+        
+        // 退出登录
+        function logout() {
+            fetch('/api/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
